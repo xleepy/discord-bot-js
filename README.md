@@ -1,4 +1,4 @@
-## Discord bot combined with google stylesheets
+## Discord bot combined with google spreadsheets
 
 Quick start google spreadsheets:
 https://developers.google.com/sheets/api/quickstart/nodejs
