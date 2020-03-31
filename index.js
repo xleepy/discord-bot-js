@@ -11,7 +11,7 @@ const client = new Discord.Client();
 
 let authorizedSheetsClient = null;
 
-let currentSheet = null;
+let sheetOptions = null;
 
 client.on("ready", () => {
   console.log(`Logged in as ${client.user.tag} `);
@@ -21,14 +21,14 @@ client.on("message", msg => {
   console.log(msg.content);
   if (msg.content == "test") {
     authorizedSheetsClient(auth =>
-      getSheetData(currentSheet, auth, msg.author)
+      getSheetData(sheetOptions, auth, msg.author)
     );
   }
 });
 
 client.on("message", msg => {
   if (msg.content.includes("!setSheet")) {
-    currentSheet = setSheetOptions(msg);
+    sheetOptions = setSheetOptions(msg);
   }
 });
 

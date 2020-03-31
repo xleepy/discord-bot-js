@@ -33,7 +33,6 @@ function createoAuth2Client(credentials, authFallback) {
  */
 
 function getNewToken(oAuth2Client, authFallback) {
-  console.log("here");
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: "offline",
     scope: SCOPES
@@ -61,8 +60,7 @@ function setSheetOptions(msg) {
   };
 }
 
-//"1CA_vXjiRw4fpPAnTpfOHktbBRloYCK9X0CJrEM1NHWY"
-// "Лист1!A1:J3"
+// Requires sheet options by command
 
 function getSheetData(currentSheetOptions, auth, author) {
   const sheets = google.sheets({ version: "v4", auth });
