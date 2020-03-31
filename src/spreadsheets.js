@@ -1,6 +1,6 @@
 const fs = require("fs");
-const { MessageEmbed } = require("discord.js");
 const { google } = require("googleapis");
+const AsciiTable = require("ascii-table");
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"];
@@ -60,22 +60,14 @@ function setSheetOptions(msg) {
   };
 }
 
-// Requires sheet options by command
-
 function getSheetData(currentSheetOptions, auth, author) {
   const sheets = google.sheets({ version: "v4", auth });
   sheets.spreadsheets.values.get(currentSheetOptions, (err, res) => {
-    if (err) return console.log("The API returned an error: " + err);
+    if (err) return author.send("The API returned an error: " + err);
     const rows = res.data.values;
     if (rows.length) {
-      const embedMessage = new MessageEmbed();
-      embedMessage.color = "#b4b4b4";
-      embedMessage.type = "rich";
-      rows.map(row => {
-        const title = row.splice(0, 1)[0] || "N/A";
-        embedMessage.addField(title, row.join(" | "), false);
-      });
-      author.send(embedMessage);
+      const table = AsciiTable.factory({ heading: rows.splice(0, 1)[0], rows });
+      author.send(`\`\`\`${table}\`\`\``);
     } else {
       console.log("No data found.");
     }
