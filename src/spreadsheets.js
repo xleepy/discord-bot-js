@@ -1,66 +1,66 @@
-const fs = require("fs");
+const { TokenStore } = require("./token-store");
 const { google } = require("googleapis");
 const AsciiTable = require("ascii-table");
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"];
-// The file token.json stores the user's access and refresh tokens, and is
-// created automatically when the authorization flow completes for the first
-// time.
-const TOKEN_PATH = "token.json";
 
-function createoAuth2Client(credentials, authFallback) {
+function createoAuth2Client(credentials) {
+  const tokenStore = new TokenStore();
   const { client_secret, client_id, redirect_uris } = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(
     client_id,
     client_secret,
     redirect_uris[0]
   );
-  fs.readFile(TOKEN_PATH, (err, token) => {
-    if (err) return getNewToken(oAuth2Client, authFallback);
-    oAuth2Client.setCredentials(JSON.parse(token));
-  });
-  return function(callback) {
-    callback(oAuth2Client);
+  // TODO: use local map to get user tokens and operate with them while bot active
+  // No need to use external db for that i think (ok maybe needed because google returns 400 if you trying reuse same token)
+  // should rewrite logic of getting token by default
+  return {
+    generateAuthUrl(userId) {
+      if (tokenStore.getToken(userId)) {
+        return;
+      }
+      return oAuth2Client.generateAuthUrl({
+        access_type: "offline",
+        scope: SCOPES,
+      });
+    },
+    setToken(id, token) {
+      const storedToken = tokenStore.getToken(id);
+      if (storedToken) {
+        oAuth2Client.setCredentials(storedToken);
+        return;
+      }
+      oAuth2Client.getToken(token, (err, token) => {
+        if (err) {
+          return console.error(
+            "Error while trying to retrieve access token",
+            err
+          );
+        }
+        oAuth2Client.setCredentials(token);
+        tokenStore.addToken(id, token);
+      });
+    },
+    getClient() {
+      return oAuth2Client;
+    },
   };
 }
 
-/**
- * Get and store new token after prompting for user authorization, and then
- * execute the given callback with the authorized OAuth2 client.
- * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
- * @param {getEventsCallback} callback The callback for the authorized client.
- */
-
-function getNewToken(oAuth2Client, authFallback) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: "offline",
-    scope: SCOPES
-  });
-  authFallback(authUrl, token => {
-    oAuth2Client.getToken(token, (err, token) => {
-      if (err)
-        console.error("Error while trying to retrieve access token", err);
-      oAuth2Client.setCredentials(token);
-      // Store the token to disk for later program executions
-      fs.writeFile(TOKEN_PATH, JSON.stringify(token), err => {
-        if (err) return console.error(err);
-      });
-    });
-  });
-}
-
-function setSheetOptions(msg) {
-  const message = msg.content.split(" ");
-  const spreadsheetId = message[1];
-  const range = message[2];
+function setSheetOptions(message) {
+  const splittedStr = message.split(" ");
+  const spreadsheetId = splittedStr[1];
+  const range = splittedStr[2];
   return {
     spreadsheetId,
-    range
+    range,
   };
 }
 
 function getSheetData(currentSheetOptions, auth, author) {
+  console.log(auth, currentSheetOptions);
   const sheets = google.sheets({ version: "v4", auth });
   sheets.spreadsheets.values.get(currentSheetOptions, (err, res) => {
     if (err) return author.send("The API returned an error: " + err);
@@ -77,5 +77,5 @@ function getSheetData(currentSheetOptions, auth, author) {
 module.exports = {
   createoAuth2Client,
   getSheetData,
-  setSheetOptions
+  setSheetOptions,
 };
