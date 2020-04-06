@@ -13,14 +13,12 @@ function createoAuth2Client(credentials) {
     client_secret,
     redirect_uris[0]
   );
-  // TODO: use local map to get user tokens and operate with them while bot active
-  // No need to use external db for that i think (ok maybe needed because google returns 400 if you trying reuse same token)
-  // should rewrite logic of getting token by default
+  // TODO: further changes/cleanup needed (still not a perfect solution)
   return {
-    generateAuthUrl(userId) {
-      if (tokenStore.getToken(userId)) {
-        return;
-      }
+    isAuthenticated(userId) {
+      return !!tokenStore.getToken(userId);
+    },
+    generateAuthUrl() {
       return oAuth2Client.generateAuthUrl({
         access_type: "offline",
         scope: SCOPES,
@@ -60,10 +58,11 @@ function setSheetOptions(message) {
 }
 
 function getSheetData(currentSheetOptions, auth, author) {
-  console.log(auth, currentSheetOptions);
   const sheets = google.sheets({ version: "v4", auth });
   sheets.spreadsheets.values.get(currentSheetOptions, (err, res) => {
-    if (err) return author.send("The API returned an error: " + err);
+    if (err) {
+      return author.send("The API returned an error: " + err);
+    }
     const rows = res.data.values;
     if (rows.length) {
       const table = AsciiTable.factory({ heading: rows.splice(0, 1)[0], rows });

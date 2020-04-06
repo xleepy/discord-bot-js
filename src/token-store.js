@@ -1,3 +1,4 @@
+// NOTE: Dummy store for multiple users while bot running
 function TokenStore() {
   this.tokens = [];
 }

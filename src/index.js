@@ -13,10 +13,20 @@ let authorizedSheetsClient = null;
 
 let sheetOptions = null;
 
+function handleNewUser(author) {
+  if (authorizedSheetsClient.isAuthenticated(author.id)) {
+    author.send(
+      "Set spreadsheet options by !setSheet YOUR_SPREAD_SHEET_ID RANGE(LIST_NAME!LIST_RANGE)"
+    );
+    return;
+  }
+  author.send(authorizedSheetsClient.generateAuthUrl());
+}
+
 function messageHandler({ author, content }) {
   console.log(content);
   if (content === "!newGame") {
-    author.send(authorizedSheetsClient.generateAuthUrl(author.id));
+    handleNewUser(author);
   }
   if (content.includes("!setToken")) {
     const token = content.trim().split(" ")[1];
@@ -27,7 +37,7 @@ function messageHandler({ author, content }) {
   if (content.includes("!setSheet")) {
     sheetOptions = setSheetOptions(content);
   }
-  if (content == "test") {
+  if (content === "test") {
     getSheetData(sheetOptions, authorizedSheetsClient.getClient(), author);
   }
 }
@@ -40,7 +50,9 @@ client.on("message", messageHandler);
 
 client.login(config.parsed.APP_TOKEN).then(() => {
   fs.readFile("credentials.json", (err, content) => {
-    if (err) return console.log("Error loading file:", err);
+    if (err) {
+      return console.log("Error loading file:", err);
+    }
     // Authorize a client with credentials, then call the Google Sheets API.
     authorizedSheetsClient = createoAuth2Client(JSON.parse(content));
   });
