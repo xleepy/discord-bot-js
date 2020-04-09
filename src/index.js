@@ -31,14 +31,20 @@ function messageHandler({ author, content }) {
   if (content.includes("!setToken")) {
     const token = content.trim().split(" ")[1];
     if (token) {
-      authorizedSheetsClient.setToken(author.id, token);
+      authorizedSheetsClient.setToken(author.id, token, (errorMsg) =>
+        author.send(errorMsg)
+      );
     }
   }
   if (content.includes("!setSheet")) {
     sheetOptions = setSheetOptions(content);
   }
   if (content === "test") {
-    getSheetData(sheetOptions, authorizedSheetsClient.getClient(), author);
+    if (authorizedSheetsClient.isAuthenticated(author.id)) {
+      getSheetData(sheetOptions, authorizedSheetsClient.getClient(), author);
+    } else {
+      handleNewUser(author);
+    }
   }
 }
 

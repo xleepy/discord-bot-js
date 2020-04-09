@@ -20,11 +20,11 @@ function createoAuth2Client(credentials) {
     },
     generateAuthUrl() {
       return oAuth2Client.generateAuthUrl({
-        access_type: "offline",
-        scope: SCOPES,
+        "access_type": "offline",
+        "scope": SCOPES,
       });
     },
-    setToken(id, token) {
+    setToken(id, token, errFallback) {
       const storedToken = tokenStore.getToken(id);
       if (storedToken) {
         oAuth2Client.setCredentials(storedToken);
@@ -32,6 +32,9 @@ function createoAuth2Client(credentials) {
       }
       oAuth2Client.getToken(token, (err, token) => {
         if (err) {
+          errFallback(
+            `Error while trying to retrieve access token: ${err.message}`
+          );
           return console.error(
             "Error while trying to retrieve access token",
             err
@@ -58,14 +61,17 @@ function setSheetOptions(message) {
 }
 
 function getSheetData(currentSheetOptions, auth, author) {
-  const sheets = google.sheets({ version: "v4", auth });
+  const sheets = google.sheets({ "version": "v4", auth });
   sheets.spreadsheets.values.get(currentSheetOptions, (err, res) => {
     if (err) {
       return author.send("The API returned an error: " + err);
     }
     const rows = res.data.values;
     if (rows.length) {
-      const table = AsciiTable.factory({ heading: rows.splice(0, 1)[0], rows });
+      const table = AsciiTable.factory({
+        "heading": rows.splice(0, 1)[0],
+        rows,
+      });
       author.send(`\`\`\`${table}\`\`\``);
     } else {
       console.log("No data found.");
