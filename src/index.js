@@ -1,8 +1,4 @@
-const {
-  createoAuth2Client,
-  getSheetData,
-  setSheetOptions,
-} = require("./spreadsheets.js");
+const { createoAuth2Client, setSheetOptions } = require("./spreadsheets.js");
 const Discord = require("discord.js");
 const config = require("dotenv").config();
 const fs = require("fs");
@@ -59,10 +55,11 @@ function messageHandler({ author, content }) {
     sheetOptions = setSheetOptions(content);
   }
   if (content === "test") {
+    // Check if user already have token if have it set user token and send tables
     if (authorizedSheetsClient.isAuthenticated(author.id)) {
-      getSheetData(
+      authorizedSheetsClient.getSheetData(
+        author.id,
         sheetOptions,
-        authorizedSheetsClient.getClient(),
         handleTableResponse(author)
       );
     } else {

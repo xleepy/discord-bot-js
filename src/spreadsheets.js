@@ -43,8 +43,13 @@ function createoAuth2Client(credentials) {
         tokenStore.addToken(id, token);
       });
     },
-    getClient() {
-      return oAuth2Client;
+    getSheetData(userId, currentSheetOptions, onResponse) {
+      const token = tokenStore.getToken(userId);
+      if (token) {
+        oAuth2Client.setCredentials(token);
+        const sheets = google.sheets({ "version": "v4", auth: oAuth2Client });
+        sheets.spreadsheets.values.get(currentSheetOptions, onResponse);
+      }
     },
   };
 }
@@ -59,13 +64,7 @@ function setSheetOptions(message) {
   };
 }
 
-function getSheetData(currentSheetOptions, auth, onResponse) {
-  const sheets = google.sheets({ "version": "v4", auth });
-  sheets.spreadsheets.values.get(currentSheetOptions, onResponse);
-}
-
 module.exports = {
   createoAuth2Client,
-  getSheetData,
   setSheetOptions,
 };
