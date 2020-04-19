@@ -6,6 +6,7 @@ const {
 const Discord = require("discord.js");
 const config = require("dotenv").config();
 const fs = require("fs");
+const AsciiTable = require("ascii-table");
 
 const client = new Discord.Client();
 
@@ -23,9 +24,27 @@ function handleNewUser(author) {
   author.send(authorizedSheetsClient.generateAuthUrl());
 }
 
+function handleTableResponse(author) {
+  return (err, res) => {
+    if (err) {
+      return author.send("The API returned an error: " + err);
+    }
+    const rows = res.data.values;
+    if (rows.length) {
+      const table = AsciiTable.factory({
+        "heading": rows.splice(0, 1)[0],
+        rows,
+      });
+      author.send(`\`\`\`${table}\`\`\``);
+    } else {
+      console.log("No data found.");
+    }
+  };
+}
+
 function messageHandler({ author, content }) {
   console.log(content);
-  if (content === "!newGame") {
+  if (content === "!newUser") {
     handleNewUser(author);
   }
   if (content.includes("!setToken")) {
@@ -41,7 +60,11 @@ function messageHandler({ author, content }) {
   }
   if (content === "test") {
     if (authorizedSheetsClient.isAuthenticated(author.id)) {
-      getSheetData(sheetOptions, authorizedSheetsClient.getClient(), author);
+      getSheetData(
+        sheetOptions,
+        authorizedSheetsClient.getClient(),
+        handleTableResponse(author)
+      );
     } else {
       handleNewUser(author);
     }

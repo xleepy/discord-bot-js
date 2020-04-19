@@ -1,12 +1,11 @@
-const { TokenStore } = require("./token-store");
+const { createTokenStore } = require("./token-store");
 const { google } = require("googleapis");
-const AsciiTable = require("ascii-table");
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"];
 
 function createoAuth2Client(credentials) {
-  const tokenStore = new TokenStore();
+  const tokenStore = createTokenStore();
   const { client_secret, client_id, redirect_uris } = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(
     client_id,
@@ -60,23 +59,9 @@ function setSheetOptions(message) {
   };
 }
 
-function getSheetData(currentSheetOptions, auth, author) {
+function getSheetData(currentSheetOptions, auth, onResponse) {
   const sheets = google.sheets({ "version": "v4", auth });
-  sheets.spreadsheets.values.get(currentSheetOptions, (err, res) => {
-    if (err) {
-      return author.send("The API returned an error: " + err);
-    }
-    const rows = res.data.values;
-    if (rows.length) {
-      const table = AsciiTable.factory({
-        "heading": rows.splice(0, 1)[0],
-        rows,
-      });
-      author.send(`\`\`\`${table}\`\`\``);
-    } else {
-      console.log("No data found.");
-    }
-  });
+  sheets.spreadsheets.values.get(currentSheetOptions, onResponse);
 }
 
 module.exports = {
